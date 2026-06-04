@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #03060b;
+  font-synthesis: none;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(34, 211, 238, 0.32);
+  color: white;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(2, 6, 23, 0.9);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.28);
+  border: 2px solid rgba(2, 6, 23, 0.9);
+  border-radius: 999px;
+}
+
+.scanline {
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(34, 211, 238, 0.08),
+    transparent
+  );
+  animation: scanline 8s ease-in-out infinite;
+}
+
+.premium-orbit {
+  background:
+    radial-gradient(circle at 30% 25%, rgba(34, 211, 238, 0.28), transparent 24%),
+    radial-gradient(circle at 72% 66%, rgba(20, 184, 166, 0.22), transparent 22%),
+    linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(2, 6, 23, 0.84));
+}
+
+.service-visual {
+  background:
+    linear-gradient(115deg, rgba(255, 255, 255, 0.12), transparent 22%),
+    radial-gradient(circle at 70% 30%, rgba(34, 211, 238, 0.32), transparent 25%),
+    radial-gradient(circle at 30% 76%, rgba(245, 158, 11, 0.2), transparent 22%),
+    #08111f;
+}
+
+@keyframes scanline {
+  0%,
+  100% {
+    transform: translateY(-8rem);
+  }
+  50% {
+    transform: translateY(100vh);
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
