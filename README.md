@@ -46,3 +46,5 @@ cards without exposing Adzuna keys.
 The interface uses remote free-media references plus deterministic CSS fallbacks.
 Pexels and Unsplash assets are intended to stay representational and avoid
 logos, recognizable people, or implied AWS endorsement.
+
+Deployment refresh: Nebula-Hub GitHub Pages workflow verified.
