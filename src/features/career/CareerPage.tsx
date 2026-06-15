@@ -607,10 +607,13 @@ export function CareerPage() {
   };
 
   const runAdzunaSearch = async ({ useCache = true }: { useCache?: boolean } = {}) => {
+    const hasSecureProxy = Boolean(
+      envStatus.env.adzunaProxyUrl && !envStatus.env.adzunaProxyUrl.startsWith("/adzuna-api"),
+    );
+
     if (
       !envStatus.isAdzunaReady ||
-      !envStatus.env.adzunaAppId ||
-      !envStatus.env.adzunaAppKey
+      (!hasSecureProxy && (!envStatus.env.adzunaAppId || !envStatus.env.adzunaAppKey))
     ) {
       setAdzunaError(`Add ${envStatus.missingAdzunaKeys.join(" and ")} locally to load live Adzuna listings.`);
       return;
@@ -624,8 +627,8 @@ export function CareerPage() {
       const broadQuery = buildBroadAdzunaQuery(liveSearchRole, careerState.jobSearchPreferences);
       const searchLocation = getAdzunaLocation(careerState.jobSearchPreferences);
       const baseSearch = {
-        appId: envStatus.env.adzunaAppId,
-        appKey: envStatus.env.adzunaAppKey,
+        appId: envStatus.env.adzunaAppId ?? "",
+        appKey: envStatus.env.adzunaAppKey ?? "",
         country: envStatus.adzunaCountry,
         location: searchLocation,
         proxyUrl: envStatus.env.adzunaProxyUrl,

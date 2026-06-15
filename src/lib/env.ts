@@ -3,19 +3,19 @@ export type AppEnv = {
   adzunaAppKey?: string;
   adzunaCountry: string;
   adzunaProxyUrl?: string;
-  supabaseUrl?: string;
-  supabaseAnonKey?: string;
   geminiApiKey?: string;
+  supabaseAnonKey?: string;
+  supabaseUrl?: string;
 };
 
 export type EnvStatus = {
-  env: AppEnv;
   adzunaCountry: string;
+  env: AppEnv;
   isAdzunaReady: boolean;
+  isGeminiReady: boolean;
   isSupabaseReady: boolean;
   missingAdzunaKeys: string[];
   missingSupabaseKeys: string[];
-  isGeminiReady: boolean;
 };
 
 export function getEnvStatus(): EnvStatus {
@@ -24,25 +24,31 @@ export function getEnvStatus(): EnvStatus {
     geminiApiKey && !geminiApiKey.toLowerCase().includes("optional-rotated")
       ? geminiApiKey
       : undefined;
+  const adzunaProxyUrl =
+    import.meta.env.VITE_ADZUNA_PROXY_URL?.trim() ||
+    (import.meta.env.DEV ? "/adzuna-api" : undefined);
+  const hasSecureAdzunaProxy = Boolean(
+    adzunaProxyUrl && !adzunaProxyUrl.startsWith("/adzuna-api"),
+  );
 
   const env: AppEnv = {
     adzunaAppId: import.meta.env.VITE_ADZUNA_APP_ID?.trim(),
     adzunaAppKey: import.meta.env.VITE_ADZUNA_APP_KEY?.trim(),
     adzunaCountry: import.meta.env.VITE_ADZUNA_COUNTRY?.trim().toLowerCase() || "us",
-    adzunaProxyUrl: import.meta.env.VITE_ADZUNA_PROXY_URL?.trim() || (import.meta.env.DEV ? "/adzuna-api" : undefined),
-    supabaseUrl: import.meta.env.VITE_SUPABASE_URL?.trim(),
-    supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY?.trim(),
+    adzunaProxyUrl,
     geminiApiKey: normalizedGeminiKey,
+    supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY?.trim(),
+    supabaseUrl: import.meta.env.VITE_SUPABASE_URL?.trim(),
   };
 
   const missingAdzunaKeys: string[] = [];
   const missingSupabaseKeys: string[] = [];
 
-  if (!env.adzunaAppId) {
+  if (!hasSecureAdzunaProxy && !env.adzunaAppId) {
     missingAdzunaKeys.push("VITE_ADZUNA_APP_ID");
   }
 
-  if (!env.adzunaAppKey) {
+  if (!hasSecureAdzunaProxy && !env.adzunaAppKey) {
     missingAdzunaKeys.push("VITE_ADZUNA_APP_KEY");
   }
 
@@ -55,12 +61,12 @@ export function getEnvStatus(): EnvStatus {
   }
 
   return {
-    env,
     adzunaCountry: env.adzunaCountry,
+    env,
     isAdzunaReady: missingAdzunaKeys.length === 0,
+    isGeminiReady: Boolean(normalizedGeminiKey),
     isSupabaseReady: missingSupabaseKeys.length === 0,
     missingAdzunaKeys,
     missingSupabaseKeys,
-    isGeminiReady: Boolean(normalizedGeminiKey),
   };
 }
