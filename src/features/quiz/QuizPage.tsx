@@ -44,6 +44,7 @@ type QuizHistoryItem = {
 const examQuestionCount = 65;
 const examSeconds = 90 * 60;
 const quizStatsKey = "nebula-hub:quiz:stats";
+const studyQuestionCounts = [20, 30, 40, 50, 65];
 
 function normalizeOptions(options: unknown): string[] {
   if (Array.isArray(options)) {
@@ -155,6 +156,7 @@ export function QuizPage() {
   const [isLoading, setIsLoading] = useState(Boolean(client));
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<QuizMode | null>(null);
+  const [studyQuestionCount, setStudyQuestionCount] = useState(20);
   const [sessionQuestions, setSessionQuestions] = useState<SessionQuestion[]>([]);
   const [answers, setAnswers] = useState<Array<number | null>>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -237,7 +239,7 @@ export function QuizPage() {
   const answeredCount = answers.filter((answer) => answer !== null).length;
 
   const startQuiz = (nextMode: QuizMode) => {
-    const count = nextMode === "exam" ? examQuestionCount : Math.min(20, questions.length);
+    const count = nextMode === "exam" ? examQuestionCount : Math.min(studyQuestionCount, questions.length);
     const nextQuestions = shuffle(questions).slice(0, Math.min(count, questions.length));
 
     setMode(nextMode);
@@ -358,8 +360,11 @@ export function QuizPage() {
             accent="amber"
             icon={<Eye className="h-6 w-6" />}
             onStart={() => startQuiz("study")}
-            points={["20-question focused session", "Explanation after each answer", "Better for learning weak domains"]}
+            points={[`${studyQuestionCount}-question focused session`, "Explanation after each answer", "Better for learning weak domains"]}
+            studyQuestionCount={studyQuestionCount}
+            studyQuestionCounts={studyQuestionCounts}
             title="Study Mode"
+            onStudyQuestionCountChange={setStudyQuestionCount}
           />
         </section>
 
@@ -563,14 +568,20 @@ export function QuizPage() {
 function ModeCard({
   accent,
   icon,
+  onStudyQuestionCountChange,
   onStart,
   points,
+  studyQuestionCount,
+  studyQuestionCounts,
   title,
 }: {
   accent: "amber" | "cyan";
   icon: ReactNode;
+  onStudyQuestionCountChange?: (count: number) => void;
   onStart: () => void;
   points: string[];
+  studyQuestionCount?: number;
+  studyQuestionCounts?: number[];
   title: string;
 }) {
   const accentClass = accent === "cyan" ? "border-cyan-200/25 shadow-cyan-950/30" : "border-amber-200/25 shadow-amber-950/30";
@@ -595,6 +606,30 @@ function ModeCard({
           </div>
         ))}
       </div>
+      {studyQuestionCounts?.length && onStudyQuestionCountChange && studyQuestionCount ? (
+        <div className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Study set size
+          </p>
+          <div className="mt-3 grid grid-cols-5 gap-2">
+            {studyQuestionCounts.map((count) => (
+              <button
+                className={cn(
+                  "min-h-10 rounded-xl border text-sm font-semibold transition",
+                  studyQuestionCount === count
+                    ? "border-amber-200/45 bg-amber-200/14 text-amber-50"
+                    : "border-white/10 bg-white/[0.045] text-slate-400 hover:border-white/20 hover:text-white",
+                )}
+                key={count}
+                onClick={() => onStudyQuestionCountChange(count)}
+                type="button"
+              >
+                {count}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
       <Button className="mt-6 w-full" icon={<PlayCircle className="h-4 w-4" />} onClick={onStart} variant="primary">
         Start {title}
       </Button>
