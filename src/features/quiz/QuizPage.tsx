@@ -143,13 +143,25 @@ function isExactAnswer(selected: number[], correct: number[]) {
   return correct.every((index) => selectedSet.has(index));
 }
 
+function isAnswerCorrect(question: QuizQuestion, selected: number[]) {
+  if (question.sourceHasIncompleteMultiAnswer) {
+    const selectedSet = new Set(selected);
+    return (
+      selected.length === question.requiredSelections &&
+      question.correctIndexes.every((index) => selectedSet.has(index))
+    );
+  }
+
+  return isExactAnswer(selected, question.correctIndexes);
+}
+
 function calculateCategoryBreakdown(questions: QuizQuestion[], answers: AnswerState[]) {
   return questions.reduce<Record<string, { correct: number; total: number }>>((breakdown, question, index) => {
     const category = question.category;
     const bucket = breakdown[category] ?? { correct: 0, total: 0 };
     const selected = answers[index] ?? [];
     bucket.total += 1;
-    if (isExactAnswer(selected, question.correctIndexes)) bucket.correct += 1;
+    if (isAnswerCorrect(question, selected)) bucket.correct += 1;
     breakdown[category] = bucket;
     return breakdown;
   }, {});
@@ -178,7 +190,7 @@ function formatTime(seconds: number) {
 function buildReviewQueueItems(questions: QuizQuestion[], answers: AnswerState[]) {
   return questions
     .map((question, index) => ({ question, selected: answers[index] ?? [] }))
-    .filter(({ question, selected }) => !isExactAnswer(selected, question.correctIndexes))
+    .filter(({ question, selected }) => !isAnswerCorrect(question, selected))
     .map(({ question }) => ({
       id: `quiz-${question.id}-${Date.now()}`,
       type: 'quiz-question',
@@ -411,11 +423,10 @@ export function QuizPage() {
   const supabaseReady = Boolean((envStatus as any)?.isSupabaseReady ?? (envStatus as any)?.isReady ?? supabase);
   const answeredCount = answers.filter((answer) => answer.length > 0).length;
   const score = useMemo(
-    () => questions.reduce<number>((total, question, index) => total + (isExactAnswer(answers[index] ?? [], question.correctIndexes) ? 1 : 0), 0),
+    () => questions.reduce<number>((total, question, index) => total + (isAnswerCorrect(question, answers[index] ?? []) ? 1 : 0), 0),
     [answers, questions],
   );
   const percentage = questions.length ? Math.round((score / questions.length) * 100) : 0;
-  const hasIncompleteMultiAnswerData = questions.some((question) => question.sourceHasIncompleteMultiAnswer);
 
   useEffect(() => {
     let active = true;
@@ -601,13 +612,6 @@ export function QuizPage() {
                 answer.
               </p>
 
-              {hasIncompleteMultiAnswerData ? (
-                <div className="mt-5 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-4 text-sm text-amber-100">
-                  Some questions say “choose two” but only have one stored correct answer. Add values to
-                  <code className="mx-1 rounded bg-black/30 px-1">correct_answer_indexes</code>
-                  for those rows to score them fully.
-                </div>
-              ) : null}
             </div>
 
             <div className="grid gap-4">
@@ -683,7 +687,7 @@ export function QuizPage() {
   }
 
   if (finished) {
-    const missed = questions.filter((question, index) => !isExactAnswer(answers[index] ?? [], question.correctIndexes));
+    const missed = questions.filter((question, index) => !isAnswerCorrect(question, answers[index] ?? []));
 
     return (
       <section className="mx-auto max-w-7xl px-4 py-8">
@@ -804,7 +808,7 @@ export function QuizPage() {
   if (!currentQuestion) return null;
 
   const studyShowExplanation = mode === 'study' && currentAnswer.length >= currentQuestion.requiredSelections;
-  const currentIsCorrect = isExactAnswer(currentAnswer, currentQuestion.correctIndexes);
+  const currentIsCorrect = isAnswerCorrect(currentQuestion, currentAnswer);
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-8">
@@ -842,14 +846,6 @@ export function QuizPage() {
               </span>
             </div>
             <h2 className="mt-5 text-2xl font-semibold leading-snug text-white">{currentQuestion.question}</h2>
-
-            {currentQuestion.sourceHasIncompleteMultiAnswer ? (
-              <p className="mt-4 rounded-2xl border border-amber-300/30 bg-amber-300/10 p-3 text-sm text-amber-100">
-                This question appears to require multiple answers, but the database row has fewer stored correct answers. Update
-                <code className="mx-1 rounded bg-black/30 px-1">correct_answer_indexes</code>
-                for full scoring accuracy.
-              </p>
-            ) : null}
 
             <div className="mt-6 grid gap-3">
               {currentQuestion.options.map((option, index) => {
@@ -898,7 +894,7 @@ export function QuizPage() {
                     {currentIsCorrect ? 'Correct' : 'Review this one'}
                   </p>
                   <button
-                    className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-cyan-300/40"
+                    className="inline-flex animate-pulse items-center gap-2 rounded-xl border border-cyan-300/60 bg-cyan-300/15 px-3 py-2 text-xs font-semibold text-cyan-50 shadow-[0_0_24px_rgba(34,211,238,0.35)] transition hover:bg-cyan-300/22"
                     onClick={() => setFeedbackOpen((open) => !open)}
                     type="button"
                   >
