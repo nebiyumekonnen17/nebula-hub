@@ -99,14 +99,31 @@ function inferRequiredSelections(question: string) {
   return 1;
 }
 
+function parseAnswerLettersFromExplanation(explanation?: string | null): number[] {
+  if (!explanation) return [];
+
+  const labelMatch =
+    explanation.match(/multiple\s+correct\s+answers?\s*:\s*([A-F](?:\s*(?:,|and|&)\s*[A-F])*)/i) ??
+    explanation.match(/correct\s+answers?\s*:\s*([A-F](?:\s*(?:,|and|&)\s*[A-F])*)/i);
+
+  if (!labelMatch?.[1]) return [];
+
+  return [...new Set(labelMatch[1].match(/[A-F]/gi)?.map((letter) => letter.toUpperCase().charCodeAt(0) - 65) ?? [])];
+}
+
 function getCorrectSourceIndexes(question: RawQuizQuestion): number[] {
+  const explanationIndexes = parseAnswerLettersFromExplanation(question.explanation);
+  if (explanationIndexes.length > 1) {
+    return explanationIndexes;
+  }
+
   const multi = question.correct_answer_indexes ?? question.correctIndexes;
   if (Array.isArray(multi) && multi.length > 0) {
-    return [...new Set(multi.filter((index) => Number.isInteger(index)))];
+    return [...new Set([...multi, ...explanationIndexes].filter((index) => Number.isInteger(index)))];
   }
 
   const single = question.correct_answer_index ?? question.correctIndex;
-  return Number.isInteger(single) ? [single as number] : [];
+  return [...new Set([...(Number.isInteger(single) ? [single as number] : []), ...explanationIndexes])];
 }
 
 function normalizeQuestion(question: RawQuizQuestion): QuizQuestion | null {
@@ -144,14 +161,6 @@ function isExactAnswer(selected: number[], correct: number[]) {
 }
 
 function isAnswerCorrect(question: QuizQuestion, selected: number[]) {
-  if (question.sourceHasIncompleteMultiAnswer) {
-    const selectedSet = new Set(selected);
-    return (
-      selected.length === question.requiredSelections &&
-      question.correctIndexes.every((index) => selectedSet.has(index))
-    );
-  }
-
   return isExactAnswer(selected, question.correctIndexes);
 }
 
